@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Tutor model for TutrOS platform
+model Tutor {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  email           String   @unique
+  fullName        String
+  profilePhoto    String?
+  contactEmail    String
+  phoneNumber     String?
+  state           String   // Malaysia states
+  bio             String?
+  // Professional credentials
+  education       String?  // Educational background
+  certifications  String?  // Teaching certifications
+  experience      Int?     // Years of experience
+  workplace       String?  // School affiliations
+  isApproved      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  invoices        Invoice[]
+  schedules       Schedule[]
+  messages        Message[]
+  
+  @@map("tutors")
+}
+
+// Invoice model
+model Invoice {
+  id          String   @id @default(cuid())
+  tutorId     String
+  invoiceNumber String  @unique
+  studentName String
+  subject     String
+  amount      Float
+  dueDate     DateTime
+  status      String   @default("pending") // pending, paid, overdue
+  pdfUrl      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tutor       Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  
+  @@map("invoices")
+}
+
+// Schedule model
+model Schedule {
+  id          String   @id @default(cuid())
+  tutorId     String
+  studentName String
+  subject     String
+  level       String
+  day         String   // Monday, Tuesday, etc.
+  time        String   // 2:00 PM - 3:00 PM
+  status      String   @default("scheduled") // scheduled, completed, cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tutor       Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  
+  @@map("schedules")
+}
+
+// Message model for tutor-admin communication
+model Message {
+  id        String   @id @default(cuid())
+  tutorId   String
+  subject   String
+  content   String
+  type      String   @default("support") // support, verification
+  status    String   @default("open") // open, replied, resolved
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tutor     Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
+// Admin model
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("admins")
+}
